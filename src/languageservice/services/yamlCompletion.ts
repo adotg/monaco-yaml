@@ -68,12 +68,20 @@ export class YAMLCompletion {
         uri: string,
         location: any,
         propertyKey: string,
-        result: CompletionsCollector
+        result: CompletionsCollector,
+        schema: any
       ) => {
-        if (propertyKey !== 'expr') {
+        const schemaValue = getSchemaValues(
+          schema,
+          location.concat(propertyKey)
+        );
+        if (!schemaValue.$remoteRef) {
           return this.promise.resolve([]);
         }
 
+        // TODO use fetch to resolve remote autocomplete
+
+        console.log(schema);
         return new this.promise(res => {
           setTimeout(() => {
             result.add({
@@ -338,6 +346,7 @@ export class YAMLCompletion {
         }
         if (this.contributions.length > 0) {
           this.getContributedValueCompletions(
+            newSchema,
             currentDoc,
             node,
             offset,
@@ -348,7 +357,6 @@ export class YAMLCompletion {
         }
 
         return this.promise.all(collectionPromises).then(() => {
-          console.log('result', result);
           return result;
         });
       });
@@ -543,6 +551,7 @@ export class YAMLCompletion {
   }
 
   private getContributedValueCompletions(
+    schema: ResolvedSchema,
     doc: Parser.JSONDocument,
     node: Parser.ASTNode,
     offset: number,
@@ -580,11 +589,12 @@ export class YAMLCompletion {
         if (!valueNode || offset <= valueNode.end) {
           const location = node.parent.getPath();
           this.contributions.forEach(contribution => {
-            const collectPromise = contribution.collectValueCompletions(
+            const collectPromise = (contribution.collectValueCompletions as any)(
               document.uri,
               location,
               parentKey,
-              collector
+              collector,
+              schema.schema
             );
             if (collectPromise) {
               collectionPromises.push(collectPromise);
@@ -1253,4 +1263,11 @@ export class YAMLCompletion {
 // tslint:disable-next-line: no-any
 function isDefined(val: any): val is object {
   return val !== undefined;
+}
+
+function getSchemaValues(schema, path) {
+  return path.reduce(
+    (currSchema, currPath) => currSchema.properties[currPath],
+    schema
+  );
 }

@@ -1,5 +1,31 @@
 # Monaco YAML
 
+# Changes
+
+## Run project
+
+- from *$project_root* run `yarn && yarn build`
+- from *$project_root/examples/react_webpack* run `yarn && yarn start`
+
+The building is messed up in this project, hence if you change in languageservice run the following commands
+
+- from *$project_root/examples/react_webpack* run `yarn start` this keeps the dev server running
+- After code change in language service
+- from *$project_root* run `yarn build`
+- from *$project_root/examples/react_webpack* run `yarn cpy`
+
+If you want to integrate remote autocomplete, go to *$project_root/src/languageservice/services/yamlCompletion.ts*
+
+Search for
+```
+// TODO use fetch to resolve remote autocomplete
+```
+
+and integrate
+---
+
+# Original
+
 YAML language plugin for the Monaco Editor. It provides the following features when editing YAML files:
 * Code completion, based on JSON schemas or by looking at similar objects in the same file
 * Hovers, based on JSON schemas
