@@ -34,6 +34,7 @@ import {
 } from '../utils/arrUtils';
 import { LanguageSettings } from '../yamlLanguageService';
 import { ResolvedSchema } from 'vscode-json-languageservice/lib/umd/services/jsonSchemaService';
+import { ASTNode } from '../jsonASTTypes';
 const localize = nls.loadMessageBundle();
 
 export class YAMLCompletion {
@@ -53,6 +54,50 @@ export class YAMLCompletion {
     this.promise = promiseConstructor || Promise;
     this.customTags = [];
     this.completion = true;
+
+    this.__hookContribution();
+  }
+
+  private __hookContribution() {
+    this.contributions.push({
+      collectPropertyCompletions: (...params) => {
+        // Nothing to return
+        return this.promise.resolve([]);
+      },
+      collectValueCompletions: (
+        uri: string,
+        location: any,
+        propertyKey: string,
+        result: CompletionsCollector
+      ) => {
+        if (propertyKey !== 'expr') {
+          return this.promise.resolve([]);
+        }
+
+        return new this.promise(res => {
+          setTimeout(() => {
+            result.add({
+              kind: CompletionItemKind.Method,
+              label: 'add',
+              insertText: '"add(a, b)"',
+              filterText: '"add"',
+              insertTextFormat: InsertTextFormat.Snippet,
+              documentation: 'Adds two real numbers in the form a + b',
+            });
+
+            result.add({
+              kind: CompletionItemKind.Method,
+              label: 'remove',
+              insertText: '"remove(a, b)"',
+              filterText: '"remove"',
+              insertTextFormat: InsertTextFormat.Snippet,
+              documentation: 'Adds two real numbers in the form a - b',
+            });
+            return res(result);
+          }, 1000);
+        });
+      },
+    } as JSONWorkerContribution);
   }
 
   public configure(
@@ -302,7 +347,10 @@ export class YAMLCompletion {
           );
         }
 
-        return this.promise.all(collectionPromises).then(() => result);
+        return this.promise.all(collectionPromises).then(() => {
+          console.log('result', result);
+          return result;
+        });
       });
   }
 
@@ -448,6 +496,7 @@ export class YAMLCompletion {
                   s.schema.items[index],
                   collector,
                   separatorAfter,
+                  node,
                   true
                 );
               }
@@ -471,6 +520,7 @@ export class YAMLCompletion {
                 s.schema.items,
                 collector,
                 separatorAfter,
+                node,
                 true
               );
             }
@@ -482,6 +532,7 @@ export class YAMLCompletion {
                 propertySchema,
                 collector,
                 separatorAfter,
+                node,
                 false
               );
             }
@@ -557,6 +608,7 @@ export class YAMLCompletion {
     schema: JSONSchema,
     collector: CompletionsCollector,
     separatorAfter: string,
+    node: Parser.ASTNode = null,
     forArrayItem = false
   ): void {
     const types: { [type: string]: boolean } = {};
@@ -686,6 +738,44 @@ export class YAMLCompletion {
       );
     }
   }
+
+  //  private addRemoteValueCompletion(
+  //     schema: JSONSchema,
+  //     collector: CompletionsCollector,
+  //     separatorAfter: string,
+  //     node: Parser.ASTNode = null,
+  //     forArrayItem = false
+  //   ): void {
+  //     if (isDefined(schema['const'])) {
+  //       collector.add({
+  //         kind: this.getSuggestionKind(schema.type),
+  //         label: this.getLabelForValue(schema['const']),
+  //         insertText: this.getInsertTextForValue(schema['const'], separatorAfter),
+  //         insertTextFormat: InsertTextFormat.Snippet,
+  //         documentation: schema.description,
+  //       });
+  //     }
+  //     if (Array.isArray(schema.enum)) {
+  //       for (let i = 0, length = schema.enum.length; i < length; i++) {
+  //         const enm = schema.enum[i];
+  //         let documentation = schema.description;
+  //         if (schema.enumDescriptions && i < schema.enumDescriptions.length) {
+  //           documentation = schema.enumDescriptions[i];
+  //         }
+  //         collector.add({
+  //           kind: this.getSuggestionKind(schema.type),
+  //           label: forArrayItem
+  //             ? `- ${this.getLabelForValue(enm)}`
+  //             : this.getLabelForValue(enm),
+  //           insertText: forArrayItem
+  //             ? `- ${this.getInsertTextForValue(enm, separatorAfter)}`
+  //             : this.getInsertTextForValue(enm, separatorAfter),
+  //           insertTextFormat: InsertTextFormat.Snippet,
+  //           documentation,
+  //         });
+  //       }
+  //     }
+  //   }
 
   private addEnumValueCompletions(
     schema: JSONSchema,

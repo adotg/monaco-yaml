@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import MonacoEditor from 'react-monaco-editor';
 import 'monaco-yaml/esm/monaco.contribution';
+// import '../../lib/esm/monaco.contribution';
 import { languages } from 'monaco-editor/esm/vs/editor/editor.api';
 
 // NOTE: This will give you all editor featues. If you would prefer to limit to only the editor
@@ -42,6 +43,10 @@ const Editor = () => {
                 p2: {
                   $ref: 'http://myserver/bar-schema.json', // reference the second schema
                 },
+                expr: {
+                  description: 'You can write your custom expression here',
+                  $remoteRef: 'http://fetch.com',
+                },
               },
             },
           },
@@ -53,6 +58,9 @@ const Editor = () => {
               properties: {
                 q1: {
                   enum: ['x1', 'x2'],
+                },
+                expr: {
+                  $remoteRef: 'http://fetch.com',
                 },
               },
             },
